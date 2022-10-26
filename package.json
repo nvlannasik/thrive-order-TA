@@ -1,0 +1,35 @@
+{
+  "name": "services-order",
+  "version": "1.0.0",
+  "description": "Ini merupakan repository untuk service order di project akhir Thrive Bootcamp",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "jest --watchAll"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvlannasik/thrive-order-TA.git"
+  },
+  "author": "Noval Annasik",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nvlannasik/thrive-order-TA/issues"
+  },
+  "homepage": "https://github.com/nvlannasik/thrive-order-TA#readme",
+  "dependencies": {
+    "body-parser": "^1.20.1",
+    "confidence": "^5.0.1",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "mongoose": "^6.7.0",
+    "mongoose-auto-increment": "^5.0.1",
+    "winston": "^3.8.2",
+    "winston-fast-rabbitmq": "^2.2.0"
+  },
+  "devDependencies": {
+    "jest": "^29.2.2",
+    "nodemon": "^2.0.20",
+    "supertest": "^6.3.1"
+  }
+}
