@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const Order = require("../models/Order");
+const Order = require("../Models/Order");
 const logger = require("../utils/logger");
 
 //Get all orders
