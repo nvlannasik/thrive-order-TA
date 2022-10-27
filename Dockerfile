@@ -2,5 +2,5 @@ FROM node:14.14
 WORKDIR /app
 COPY . .
 RUN npm install --force
-EXPOSE 3000
+EXPOSE 9000
 CMD ["npm", "run", "prod"]
