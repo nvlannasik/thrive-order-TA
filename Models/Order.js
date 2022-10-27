@@ -12,14 +12,19 @@ const orderSchema = new mongoose.Schema(
     orderTotal: Number,
     orderItems: [
       {
-        _id: Number,
-        // product: {
-        //   type: mongoose.Schema.Types.ObjectId,
-        //   ref: "Product",
-        // },
+        _id: {
+          type: mongoose.Schema.Types.Number,
+          ref: "Product",
+        },
         product: String,
-        quantity: Number,
-        price: Number,
+        quantity: {
+          type: mongoose.Schema.Types.Number,
+          ref: "Product",
+        },
+        price: {
+          type: mongoose.Schema.Types.Number,
+          ref: "Product",
+        },
       },
     ],
     customer: String,

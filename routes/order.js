@@ -1,6 +1,8 @@
 const router = require("express").Router();
 const Order = require("../Models/Order");
 const logger = require("../utils/logger");
+const ampq = require("amqplib/callback_api");
+const axios = require("axios");
 
 //Get all orders
 router.get("/", async (req, res) => {
@@ -11,14 +13,18 @@ router.get("/", async (req, res) => {
       message: "Orders retrieved successfully",
       data: orders,
     });
-    logger.info("Orders retrieved successfully");
+    logger.info(
+      `[${req.method}] - 200 - ${res.statusMessage} - ${req.originalUrl} - ${req.ip}`
+    );
   } catch (err) {
     res.status(400).send({
       status: "error",
       message: "Error retrieving orders",
       data: err,
     });
-    logger.error("Error retrieving orders");
+    logger.error(
+      `[${req.method}] - 400 - ${res.statusMessage} - ${req.originalUrl} - ${req.ip}`
+    );
   }
 });
 
@@ -30,7 +36,9 @@ router.get("/:id", async (req, res) => {
       status: "error",
       message: "Order not found",
     });
-    logger.error("Order not found");
+    logger.error(
+      `[${req.method}] - 404 - ${res.statusMessage} - ${req.originalUrl} - ${req.ip}`
+    );
   }
 
   try {
@@ -39,14 +47,18 @@ router.get("/:id", async (req, res) => {
       message: "Order retrieved successfully",
       data: order,
     });
-    logger.info("Order retrieved successfully");
+    logger.info(
+      `[${req.method}] - 200 - ${res.statusMessage} - ${req.originalUrl} - ${req.ip}`
+    );
   } catch (err) {
     res.status(400).send({
       status: "error",
       message: "Error retrieving order",
       data: err,
     });
-    logger.error("Error retrieving order");
+    logger.error(
+      `[${req.method}] - 400 - ${res.statusMessage} - ${req.originalUrl} - ${req.ip}`
+    );
   }
 });
 
@@ -64,6 +76,7 @@ router.post("/", async (req, res) => {
     billingAddress: req.body.billingAddress,
     payment: req.body.payment,
   });
+
   try {
     const savedOrder = await order.save();
     res.status(200).send({
@@ -71,79 +84,67 @@ router.post("/", async (req, res) => {
       message: "Order created successfully",
       data: savedOrder,
     });
-    logger.info("Order created successfully");
+
+    //mengurangi stock product dari order yang dibuat
+    const orderItems = req.body.orderItems;
+    orderItems.forEach(async (item) => {
+      const product = await axios.get(
+        `${process.env.API_GATEWAY}/api/products/` + item._id
+      );
+      const productData = product.data.data;
+      const productStock = productData.quantity;
+      const productStockUpdate = productStock - item.quantity;
+      const productUpdate = await axios.patch(
+        `${process.env.API_GATEWAY}/api/products/` + item._id,
+        {
+          quantity: productStockUpdate,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      logger.info(`Product stock updated`);
+    });
+
+    //kirim pesan ke queue
+    ampq.connect("amqp://annasik.site", function (error0, connection) {
+      if (error0) {
+        throw error0;
+      }
+      connection.createChannel(function (error1, channel) {
+        if (error1) {
+          throw error1;
+        }
+        var queue = "order";
+        var msg = JSON.stringify({
+          from: "nvlannasik@adaptivenetworklab.org",
+          to: req.body.emailCustomer,
+          subject: "Order Confirmation",
+          text: "Your order has been confirmed",
+        });
+
+        channel.assertQueue(queue, {
+          durable: false,
+        });
+        channel.sendToQueue(queue, Buffer.from(msg));
+        logger.info(`Sent ${msg}`);
+      });
+    });
+    //
+    logger.info(
+      `[${req.method}] - 200 - ${res.statusMessage} - ${req.originalUrl} - ${req.ip}`
+    );
   } catch (err) {
     res.status(400).send({
       status: "error",
       message: "Error creating order",
       data: err,
     });
-    logger.error("Error creating order");
-  }
-});
-
-//Update order
-
-router.patch("/:id", async (req, res) => {
-  try {
-    const updatedOrder = await Order.updateOne(
-      { _id: req.params.id },
-      {
-        $set: {
-          orderNumber: req.body.orderNumber,
-          orderDate: req.body.orderDate,
-          orderStatus: req.body.orderStatus,
-          orderTotal: req.body.orderTotal,
-          orderItems: req.body.orderItems,
-          customer: req.body.customer,
-          emailCustomer: req.body.emailCustomer,
-          shippingAddress: req.body.shippingAddress,
-          billingAddress: req.body.billingAddress,
-          payment: req.body.payment,
-        },
-      }
+    logger.error(
+      `[${req.method}] - 400 - ${res.statusMessage} - ${req.originalUrl} - ${req.ip}`
     );
-    res.status(200).send({
-      status: "success",
-      message: "Order updated successfully",
-      data: updatedOrder,
-    });
-    logger.info("Order updated successfully");
-  } catch (err) {
-    res.status(400).send({
-      status: "error",
-      message: "Error updating order",
-      data: err,
-    });
-    logger.error("Error updating order");
-  }
-});
-
-//Update product stock
-
-router.patch("/updateStock/:id", async (req, res) => {
-  try {
-    const updatedOrder = await Order.updateOne(
-      { _id: req.params.id },
-      {
-        $set: {
-          orderItems: req.body.orderItems,
-        },
-      }
-    );
-    res.status(200).send({
-      status: "success",
-      message: "Order updated successfully",
-      data: updatedOrder,
-    });
-    logger.info("Order updated successfully");
-  } catch (err) {
-    res.status(400).send({
-      status: "error",
-      message: "Error updating order",
-      data: err,
-    });
-    logger.error("Error updating order");
   }
 });
 

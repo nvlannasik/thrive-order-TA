@@ -19,6 +19,8 @@
   },
   "homepage": "https://github.com/nvlannasik/thrive-order-TA#readme",
   "dependencies": {
+    "amqplib": "^0.10.3",
+    "axios": "^1.1.3",
     "body-parser": "^1.20.1",
     "confidence": "^5.0.1",
     "dotenv": "^16.0.3",
